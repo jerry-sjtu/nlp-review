@@ -3,8 +3,7 @@ package com.dp.nlp.review.cluster;
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.process.Tokenizer;
-import edu.stanford.nlp.trees.Tree;
-import edu.stanford.nlp.trees.TreebankLanguagePack;
+import edu.stanford.nlp.trees.*;
 import edu.stanford.nlp.trees.international.pennchinese.ChineseTreebankLanguagePack;
 
 import java.io.StringReader;
@@ -19,8 +18,12 @@ import java.util.Queue;
 public class ChineseParser {
 
     public static void main(String[] args) {
-        String sentence = "老师 穿 着 一件 很 美丽 的 衣服";
-        String keyword = "衣服";
+        //String sentence = "点了 蜀香猪手 觉得 烧的 不够 糯";
+        //String sentence = "蹄筋 的 部分 只有 彻底 烧 糯了，然后 油锅 里 一拉 才 外酥里糯";
+        //String sentence = "海鲜 石锅面片 超 好吃 哒 里面 有 虾 和 蛤蜊 虾 和 蛤蜊 都 很 新鲜 哦";
+        String sentence = "水煮鱼 不太 好 太 油辣 口水鸡 一般 性价比 高";
+        //String sentence = "他们 家 的 鱼 不错";
+        String keyword = "鱼";
         int kwIndex = 0;
         String sentArry[] = sentence.split(" ");
         for (int i = 0; i < sentArry.length; i++) {
@@ -43,6 +46,11 @@ public class ChineseParser {
         Tree parse = lp.apply(sentList);
         parse.pennPrint();
 
+        GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
+        GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
+        List<TypedDependency> tdl = gs.typedDependenciesCCprocessed();
+        System.out.println(tdl);
+
         List<Tree> leaves = parse.getLeaves();
         Iterator<Tree> it = leaves.iterator();
         while (it.hasNext()) {
@@ -54,24 +62,25 @@ public class ChineseParser {
                 boolean extraedflg = false;
                 // 如果当前节点的父节点是NN，则遍历该父节点的父节点的兄弟节点
                 if (tag.equals("NN") || tag.equals("VA")) {
-                    Tree root = start.parent(parse).parent(parse);
-                    myScanTree(root, "NN", keyword);
-//                    for (int i = 0; i < parse.depth(); i++) {
-//                        start = start.parent(parse);
-//                        if (start.value().toString().trim().equals("ROOT") || extraedflg == true) {
-//                            break;
-//                        }
-//                        List<Tree> bros = start.siblings(parse);
-//                        if (bros != null) {
-//                            Iterator<Tree> it1 = bros.iterator();
-//                            while (it1.hasNext()) {
-//                                Tree bro = it1.next();
-//                                extraedflg = IteratorTree(bro, tag);
-//                                if (extraedflg) {
-//                                    break;
-//                                }
-//                            }
-//                        }
+//                    Tree root = start.parent(parse).parent(parse);
+//                    myScanTree(root, "NN", keyword);
+                    for (int i = 0; i < parse.depth(); i++) {
+                        start = start.parent(parse);
+                        if (start.value().toString().trim().equals("ROOT") || extraedflg == true) {
+                            break;
+                        }
+                        List<Tree> bros = start.siblings(parse);
+                        if (bros != null) {
+                            Iterator<Tree> it1 = bros.iterator();
+                            while (it1.hasNext()) {
+                                Tree bro = it1.next();
+                                extraedflg = IteratorTree(bro, tag);
+                                if (extraedflg) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

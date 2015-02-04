@@ -16,7 +16,8 @@ import java.util.List;
 public class Deomo {
 
     public static void main(String[] args) {
-        String reivew = "年底了天天都有聚会，周五约了老同事在久光吃饭，大家都爱辣菜，选了8楼的品川，正好8楼是久光积分兑换点，换了Fissler 14cm 两个锅，蛮爽的。品川就在商场会员中心斜对面，大大字的品川，远远已见。";
+        //String reivew = "年底了天天都有聚会，周五约了老同事在久光吃饭，大家都爱辣菜，选了8楼的品川，正好8楼是久光积分兑换点，换了Fissler 14cm 两个锅，蛮爽的。品川就在商场会员中心斜对面，大大字的品川，远远已见。";
+        String reivew = "点了蜀香猪手，觉得烧的不够糯，蹄筋的部分只有彻底烧糯了，然后油锅里一拉才外酥里糯";
         test(reivew);
         dictionay();
     }
