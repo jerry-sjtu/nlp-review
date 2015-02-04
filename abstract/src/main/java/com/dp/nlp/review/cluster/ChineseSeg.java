@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Created by qiangwang on 15/1/26.
  */
-public class Deomo {
+public class ChineseSeg {
 
     public static void main(String[] args) {
         //String reivew = "年底了天天都有聚会，周五约了老同事在久光吃饭，大家都爱辣菜，选了8楼的品川，正好8楼是久光积分兑换点，换了Fissler 14cm 两个锅，蛮爽的。品川就在商场会员中心斜对面，大大字的品川，远远已见。";
