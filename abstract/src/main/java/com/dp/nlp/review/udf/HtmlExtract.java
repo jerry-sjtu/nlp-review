@@ -15,7 +15,7 @@ import java.io.InputStream;
 public class HtmlExtract extends UDF {
 
     public static void main(String[] args) {
-        String html = "<b><span style=\"\">最近和老公一起来玩了一趟，这里毕竟在郊区地点偏僻，不过正因为这样才有大片土地开发使用，温泉度假区里显得十分宽敞舒适，远离喧闹拥挤的市中心来到这里安静开阔的地方首先就觉得精神放松了。建筑外观体现汉唐风格，古典气派。步入温泉中心大堂又体现出欧洲皇室古典风格，金碧辉煌的感觉。</span>  </b>";
+        String html = "<b><span style=\"\">最近和老公一起来玩了一趟，这里毕竟在郊区地点偏僻，<a href=\"baidu\"></a>不过正因为这样才有大片土地开发使用，温泉度假区里显得十分宽敞舒适，远离喧闹拥挤的市中心来到这里安静开阔的地方首先就觉得精神放松了。建筑外观体现汉唐风格，古典气派。步入温泉中心大堂又体现出欧洲皇室古典风格，金碧辉煌的感觉。</span>  </b>";
         HtmlExtract obj = new HtmlExtract();
         String result = obj.evaluate(html);
         System.out.println(result);

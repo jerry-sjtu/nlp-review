@@ -15,7 +15,7 @@ import java.util.Queue;
 /**
  * Created by qiangwang on 15/2/2.
  */
-public class ChineseParser {
+public class ChineseParserDemo {
 
     public static void main(String[] args) {
         //String sentence = "点了 蜀香猪手 觉得 烧的 不够 糯";
