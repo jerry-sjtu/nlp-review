@@ -14,6 +14,7 @@ import java.util.List;
  */
 public class ChineseSeg extends UDF {
     private static String SPLIT_REGX = " |\\.|!|。|！|\\t|\\n|~";
+    private static String HIVE_NULL = "\\N";
 
     public static void main(String[] args) {
         //String reivew = "年底了天天都有聚会，周五约了老同事在久光吃饭，大家都爱辣菜，选了8楼的品川，正好8楼是久光积分兑换点，换了Fissler 14cm 两个锅，蛮爽的。品川就在商场会员中心斜对面，大大字的品川，远远已见。";
@@ -21,11 +22,14 @@ public class ChineseSeg extends UDF {
         ChineseSeg seg = new ChineseSeg();
         String clause =  seg.evaluate(reivew, 0);
         System.out.println(clause);
+        String fc = seg.filter("原 帖bbs 地址 http");
+        System.out.println(fc);
     }
 
     public String evaluate(String review, int hasPOS) {
+        review = filter(review);
         if(StringUtils.isBlank(review)) {
-            return StringUtils.EMPTY;
+            return HIVE_NULL;
         }
         String[] cList = review.split(SPLIT_REGX);
         StringBuilder sb = new StringBuilder();
@@ -43,6 +47,14 @@ public class ChineseSeg extends UDF {
             sb.append("\n");
         }
         return sb.toString();
+    }
+
+    public String filter(String originText) {
+        if(StringUtils.isBlank(originText)) {
+            return StringUtils.EMPTY;
+        }
+        originText = originText.replaceAll("([a-z]|[A-Z]|[0-9]|\\t|=|\\-|\\.|/|:|：| )+", " ").trim();
+        return originText;
     }
 }
 
