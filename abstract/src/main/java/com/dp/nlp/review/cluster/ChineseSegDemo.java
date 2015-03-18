@@ -1,6 +1,5 @@
 package com.dp.nlp.review.cluster;
 
-import com.sun.xml.internal.xsom.impl.Ref;
 import org.ansj.domain.Term;
 import org.ansj.library.UserDefineLibrary;
 import org.ansj.splitWord.analysis.BaseAnalysis;
