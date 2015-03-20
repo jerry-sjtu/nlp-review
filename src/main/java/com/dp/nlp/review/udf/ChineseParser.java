@@ -36,12 +36,10 @@ public class ChineseParser extends UDF {
 
     public ChineseParser() {
         try {
-            MyStaticValue.ambiguityLibrary = "library/ambiguity.dic";
             addDict("library/ambiguity.dic");
         } catch (IOException e) {
             System.out.println("ambiguity dictionary is not loaded!");
         }
-        //addDict();
         this.lp =  LexicalizedParser.loadModel(grammar, options);
     }
 
@@ -74,7 +72,6 @@ public class ChineseParser extends UDF {
             Map<String, String> posMap = new HashMap<String, String>();
             for(Term t : termList) {
                 sb.append(t.getName()).append(" ");
-//                System.out.println(t.toString());
                 posMap.put(t.getName(), t.getNatrue().natureStr);
             }
             System.out.println(sb.toString());
