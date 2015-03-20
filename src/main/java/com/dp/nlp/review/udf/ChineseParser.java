@@ -10,14 +10,12 @@ import love.cq.library.Library;
 import org.ansj.domain.Term;
 import org.ansj.library.UserDefineLibrary;
 import org.ansj.splitWord.analysis.ToAnalysis;
+import org.ansj.util.MyStaticValue;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.ql.exec.UDF;
 import org.apache.ibatis.io.Resources;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,17 +41,18 @@ public class ChineseParser extends UDF {
 
     public ChineseParser() {
         try {
-            addDict("library/ambiguity.dic");
+            //MyStaticValue.ambiguityLibrary = "library/ambiguity.dic";
+            addDict("/library/ambiguity.dic");
         } catch (IOException e) {
             System.out.println("ambiguity dictionary is not loaded!");
         }
         try {
-            initAdjSentDic("adj_sent.dic");
+            initAdjSentDic("/adj_sent.dic");
         }  catch (IOException e) {
             System.out.println("adj sentiment dictionary is not loaded!");
         }
         try {
-            initNounCluster("beauty_hair_noun.csv");
+            initNounCluster("/beauty_hair_noun.csv");
         } catch (IOException e) {
             System.out.println("noun cluster is not loaded!");
         }
@@ -66,8 +65,8 @@ public class ChineseParser extends UDF {
         //String sentence = "灯光很赞，模特和婚纱也很美。场地不错，工作人员也热情，只是细节上还有进步空间。";
         //String sentence = "服务好，里面环境不错，就是周围环境一般般，但是交通十分方便，期待11月的婚礼";
         //String sentence = "环境不错，布置的也很漂亮，服务员还把我掉了的手机还给我。菜品对得起这个价格。";
-        String s1 = "抽中资生堂护理的免费体验。地方是坐落在华盛大厦的16楼，还蛮好找的。因为做的睫毛店就在楼上19楼，每两个月必报道一次的地方。";
-        String s2 = "总结：我做的是施华蔻的染发，手艺，服务态度，环境都很不错，下面听我慢慢说来。";
+        String s1 = "圣维拉是杨浦区新开的一家一站式婚礼会所，环境是没的说的， ";
+        String s2 = "蒸菜味道清淡，养肠胃，吃了感觉比较舒服，新鲜，很清口，不油腻。价格还公道的。值得去尝一尝。就是长生路的环境陈旧，光线暗。 西城广场的新店开了，环境比长生路的好很多，服务、餐具、装修都讲究了不少。还是很有进步的。";
         ChineseParser parser = new ChineseParser();
         List<String> tList = parser.evaluate(s1);
         System.out.println(tList);
@@ -167,7 +166,10 @@ public class ChineseParser extends UDF {
             r = SENTIMENT_NEGATIVE;
         }
         else if(score1 > 3 && score2 > 3 && score3 > 3) {
-            r = SENTIMENT_NEUTRAL;
+            r = SENTIMENT_POSITIVE;
+        }
+        else if(score1 < 2 && score2 < 2 && score3 < 2) {
+            r = SENTIMENT_NEGATIVE;
         }
         return r;
     }
@@ -186,28 +188,25 @@ public class ChineseParser extends UDF {
         return originText;
     }
 
-    private static void addDict(String dictPath) throws IOException{
-        FileReader fr = new FileReader(Resources.getResourceAsFile(dictPath));
-        BufferedReader br = new BufferedReader(fr);
+    private void addDict(String dictPath) throws IOException{
+//        FileReader fr = new FileReader(Resources.getResourceAsFile(dictPath));
+        InputStream in = this.getClass().getResourceAsStream(dictPath);
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
         String line;
         while((line = br.readLine()) != null) {
             String[] arr = line.split("( )+");
             if(arr.length == 3) {
-                Value value = new Value(arr[0], arr[1], arr[2]);
-                Library.insertWord(UserDefineLibrary.ambiguityForest, value);
-            }
-            else if(arr.length == 5) {
-                Value value = new Value(arr[0], arr[1], arr[2], arr[3], arr[4]);
-                Library.insertWord(UserDefineLibrary.ambiguityForest, value);
+                UserDefineLibrary.insertWord(arr[0], arr[1], Integer.parseInt(arr[2]));
             }
         }
         br.close();
-        fr.close();
+        in.close();
     }
 
     private void initAdjSentDic(String dictPath) throws IOException{
-        FileReader fr = new FileReader(Resources.getResourceAsFile(dictPath));
-        BufferedReader br = new BufferedReader(fr);
+        //FileReader fr = new FileReader(Resources.getResourceAsFile(dictPath));
+        InputStream in = this.getClass().getResourceAsStream(dictPath);
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
         String line;
         adjSentMap = new HashMap<String, Integer>();
         while((line = br.readLine()) != null) {
@@ -219,12 +218,13 @@ public class ChineseParser extends UDF {
             }
         }
         br.close();
-        fr.close();
+        in.close();
     }
 
     private void initNounCluster(String dictPath) throws IOException{
-        FileReader fr = new FileReader(Resources.getResourceAsFile(dictPath));
-        BufferedReader br = new BufferedReader(fr);
+//        FileReader fr = new FileReader(Resources.getResourceAsFile(dictPath));
+        InputStream in = this.getClass().getResourceAsStream(dictPath);
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
         String line;
         nounClusterMap = new HashMap<String, String>();
         while((line = br.readLine()) != null) {
@@ -238,6 +238,6 @@ public class ChineseParser extends UDF {
             }
         }
         br.close();
-        fr.close();
+        in.close();
     }
 }
