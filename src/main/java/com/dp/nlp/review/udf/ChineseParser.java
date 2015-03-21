@@ -5,15 +5,11 @@ import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.process.Tokenizer;
 import edu.stanford.nlp.trees.*;
 import edu.stanford.nlp.trees.international.pennchinese.ChineseTreebankLanguagePack;
-import love.cq.domain.Value;
-import love.cq.library.Library;
 import org.ansj.domain.Term;
 import org.ansj.library.UserDefineLibrary;
 import org.ansj.splitWord.analysis.ToAnalysis;
-import org.ansj.util.MyStaticValue;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.ql.exec.UDF;
-import org.apache.ibatis.io.Resources;
 
 import java.io.*;
 import java.util.HashMap;
@@ -27,7 +23,7 @@ import java.util.regex.Pattern;
  * Created by qiangwang on 15/2/5.
  */
 public class ChineseParser extends UDF {
-    private static String SPLIT_REGX = "，| |\\.|!|。|！|\\t|\\n|~";
+    private static String SPLIT_REGX = ",|，| |\\.|!|。|！|\\t|\\n|~";
     private static Pattern BAD_HEAD_P = Pattern.compile("[a-zA-Z0-9]+");
     private static int MAX_LENGTH = 1024;
     String grammar = "chinesePCFG.ser.gz";
@@ -59,19 +55,60 @@ public class ChineseParser extends UDF {
         this.lp =  LexicalizedParser.loadModel(grammar, options);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException{
         //String sentence = "圣维拉是杨浦区新开的一家一站式婚礼会所，环境是没的说的，特别喜欢草坪婚礼，它家也可以办，菜式的话个人觉得一般般，会考虑吧. 好吃的鱼";
         //String sentence = "宴厅给人的感觉就是大气、华丽、清爽，高度估计有4、5米，在这种地方办婚礼显得有档次，而其余婚礼设施也是相当齐全，他们家还有独有的嫁衣房，婚纱礼服应有尽有，非常人性化，而其露天平台也不错，午后可以供客人休息，风景很漂亮，与老公是婚博会上定下的，因为有优惠，实体会所早已看过，相当满意，所有也没什么好纠结了，婚礼半年后举行，而他们家的销售以及策划也早早的就联系了我们，还是很负责任的，婚礼交由这种会所来打理会给人相当安心的感觉，很棒。";
         //String sentence = "灯光很赞，模特和婚纱也很美。场地不错，工作人员也热情，只是细节上还有进步空间。";
         //String sentence = "服务好，里面环境不错，就是周围环境一般般，但是交通十分方便，期待11月的婚礼";
         //String sentence = "环境不错，布置的也很漂亮，服务员还把我掉了的手机还给我。菜品对得起这个价格。";
-        String s1 = "圣维拉是杨浦区新开的一家一站式婚礼会所，环境是没的说的， ";
-        String s2 = "蒸菜味道清淡，养肠胃，吃了感觉比较舒服，新鲜，很清口，不油腻。价格还公道的。值得去尝一尝。就是长生路的环境陈旧，光线暗。 西城广场的新店开了，环境比长生路的好很多，服务、餐具、装修都讲究了不少。还是很有进步的。";
+        //String sentence = "圣维拉是杨浦区新开的一家一站式婚礼会所，环境是没的说的， ";
+        //String sentence = "前几天去洗牙，因为我第一次洗牙，不太适应，医生态度邪恶，机械落后，还禁止我呜咽！之前说好180的，洗完之后变220了";
+        String sentence = "日本发型师比较贵，中国的就便宜点，我觉得他们剪得不错的，价格也还可以。尤其是我第一次从长发剪成短发，就很划算，剪得也好，同学同事都说成熟了。第二次替我剪了个太新潮的发型，我实在不能接受。";
+
+//        ChineseParser parser = new ChineseParser();
+//        List<String> tList = parser.evaluate(sentence);
+//        System.out.println(tList);
+
+        String path1 = "/Users/qiangwang/Downloads/hair.csv";
+        String path2 = "/Users/qiangwang/Downloads/r.csv";
+        int lineNum = 1000;
         ChineseParser parser = new ChineseParser();
-        List<String> tList = parser.evaluate(s1);
-        System.out.println(tList);
-        tList = parser.evaluate(s2);
-        System.out.println(tList);
+        parser.processFile(path1, path2, lineNum);
+    }
+
+    public void processFile(String path1, String path2, int lineNum) throws IOException{
+        if(lineNum < 0) {
+            return;
+        }
+
+        File file1 = new File(path1);
+        File file2 = new File(path2);
+        BufferedReader br = new BufferedReader(new FileReader(file1));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(file2));
+        String line;
+        int i = 0;
+        while((line = br.readLine()) != null) {
+            String[] arr = line.split("\01");
+            if(arr.length != 2) {
+                i++;
+                continue;
+            }
+
+            String reviewId = arr[0];
+            String sentence = arr[1];
+            LinkedList<String> tagList = evaluate(sentence);
+            StringBuilder sb = new StringBuilder();
+            sb.append(reviewId).append("\01").append(sentence).append("\01").append(tagList.toString()).append("\n");
+            bw.write(sb.toString());
+            i++;
+            System.out.println(i);
+
+            if(lineNum > 0 && i > lineNum) {
+                break;
+            }
+        }
+        br.close();
+        bw.close();
     }
 
     public LinkedList<String> evaluate(String sentence) {
@@ -90,13 +127,18 @@ public class ChineseParser extends UDF {
             }
 
             List<Term> termList = ToAnalysis.parse(c);
+            if(hasOpinion(termList) == false) {
+                start += c.length();
+                continue;
+            }
+
             StringBuilder sb = new StringBuilder();
             Map<String, String> posMap = new HashMap<String, String>();
             for(Term t : termList) {
                 sb.append(t.getName()).append(" ");
                 posMap.put(t.getName(), t.getNatrue().natureStr);
             }
-//            System.out.println(sb.toString());
+            //System.out.println(posMap.toString());
             LinkedList<String> tmpList = extract(sentence, sb.toString(), start, posMap);
             tagList.addAll(tmpList);
 
@@ -106,7 +148,23 @@ public class ChineseParser extends UDF {
         return tagList;
     }
 
+    private boolean hasOpinion(List<Term> termList) {
+        boolean hasNoun = false;
+        boolean hasAdj = false;
+        for(Term t : termList) {
+            if(t.getNatrue().natureStr.equals("a") || t.getNatrue().natureStr.equals("an")) {
+                hasAdj = true;
+            }
+            if(t.getNatrue().natureStr.equals("n")) {
+                hasNoun = true;
+            }
+        }
+        return hasAdj && hasNoun;
+    }
+
     private LinkedList<String> extract(String originalSent, String splitSent, int start, Map<String, String> posMap) {
+        LinkedList<String> list = new LinkedList<String>();
+
         TreebankLanguagePack tlp = new ChineseTreebankLanguagePack();
         Tokenizer<? extends HasWord> toke = tlp.getTokenizerFactory().getTokenizer(new StringReader(splitSent));
         List<? extends HasWord> sentList = toke.tokenize();
@@ -115,30 +173,27 @@ public class ChineseParser extends UDF {
         GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
         GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
         List<TypedDependency> tdl = gs.typedDependenciesCCprocessed();
-//        System.out.println(tdl);
-
-
-        LinkedList<String> list = new LinkedList<String>();
         for(TypedDependency d : tdl) {
             TreeGraphNode dep = d.dep();
             TreeGraphNode gov = d.gov();
             GrammaticalRelation rel = d.reln();
             String highlight = highlight(originalSent, start, dep.value(), gov.value());
-            if(rel.toString().equals("nsubj") && "a".equals(posMap.get(gov.value()))) {
+            if(rel.toString().equals("nsubj")
+                  &&  ("a".equals(posMap.get(gov.value())) || "an".equals(posMap.get(gov.value())))) {
                 int sent = sentiment(dep.value(), gov.value(), 0, 0, 0);
                 int type = 1;
                 String cluster = nounClusterMap.get(dep.value());
                 String target = StringUtils.isBlank(cluster) ? dep.value() : cluster;
                 list.add(String.format("%s%s:%s:%s:%s", target, gov.value(), highlight, sent, type));
             }
-            else if(rel.toString().equals("amod") && "a".equals(posMap.get(dep.value())))
-            {
-                int sent = sentiment(dep.value(), gov.value(), 0, 0, 0);
-                int type = 1;
-                String cluster = nounClusterMap.get(dep.value());
-                String target = StringUtils.isBlank(cluster) ? dep.value() : cluster;
-                list.add(String.format("%s%s:%s:%s:%s", target, gov.value(), highlight, sent, type));
-            }
+//            else if(rel.toString().equals("amod") && "a".equals(posMap.get(dep.value())))
+//            {
+//                int sent = sentiment(dep.value(), gov.value(), 0, 0, 0);
+//                int type = 1;
+//                String cluster = nounClusterMap.get(dep.value());
+//                String target = StringUtils.isBlank(cluster) ? dep.value() : cluster;
+//                list.add(String.format("%s%s:%s:%s:%s", target, gov.value(), highlight, sent, type));
+//            }
         }
         return list;
     }
