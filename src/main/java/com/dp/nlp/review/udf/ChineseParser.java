@@ -71,7 +71,7 @@ public class ChineseParser extends UDF {
 
         String path1 = "/Users/qiangwang/Downloads/hair.csv";
         String path2 = "/Users/qiangwang/Downloads/r.csv";
-        int lineNum = 1000;
+        int lineNum = 0;
         ChineseParser parser = new ChineseParser();
         parser.processFile(path1, path2, lineNum);
     }

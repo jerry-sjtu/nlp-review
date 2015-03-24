@@ -29,6 +29,6 @@ public class PosExtract extends UDF {
             }
         }
         sb.insert(sb.length() - 1, '"');
-        return sb.toString();
+        return sb.toString().trim();
     }
 }
