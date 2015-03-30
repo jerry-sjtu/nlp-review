@@ -10,6 +10,7 @@ import org.ansj.library.UserDefineLibrary;
 import org.ansj.splitWord.analysis.ToAnalysis;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.ql.exec.UDF;
+import org.nlpcn.commons.lang.jianfan.JianFan;
 
 import java.io.*;
 import java.util.HashMap;
@@ -65,10 +66,12 @@ public class ChineseParser extends UDF {
         //String sentence = "前几天去洗牙，因为我第一次洗牙，不太适应，医生态度邪恶，机械落后，还禁止我呜咽！之前说好180的，洗完之后变220了";
         //String sentence = "日本发型师比较贵，中国的就便宜点，我觉得他们剪得不错的，价格也还可以。尤其是我第一次从长发剪成短发，就很划算，剪得也好，同学同事都说成熟了。第二次替我剪了个太新潮的发型，我实在不能接受。";
 
-        String sentence = "我看到前台接待，和护士MM挺漂亮的、不知道技术跟服务怎样，我打算在那拔颗智慧牙。";
+        String sentence = "雖然開在永琦旁邊，但是生意卻比“永”好。住在曹楊附近的朋友應該大多數都知道吧。髮型師都" +
+                "香港、廣東的，有個叫“阿華”的髮型師我覺得是最好的，但好像已經不做了。建議不要找一個矮矮、黃頭髮的髮型師，我覺得他的技術不怎麽，個人意見哦~服務員都挺主動熱心的，但是會一直在耳邊嘮叨，希望客戶多做幾個項目。。。。。。";
         ChineseParser parser = new ChineseParser();
         List<String> tList = parser.evaluate(sentence);
         System.out.println(tList);
+
 
 //        String path1 = "/Users/qiangwang/Downloads/hair.csv";
 //        String path2 = "/Users/qiangwang/Downloads/r.csv";
@@ -128,7 +131,7 @@ public class ChineseParser extends UDF {
             }
 
             List<Term> termList = ToAnalysis.parse(c);
-            //System.out.println(termList);
+//            System.out.println(termList);
             if(hasOpinion(termList) == false) {
                 start += c.length();
                 continue;
@@ -186,6 +189,9 @@ public class ChineseParser extends UDF {
                 String cluster = nounClusterMap.get(dep.value());
                 String target = StringUtils.isBlank(cluster) ? dep.value() : cluster;
                 String[] highlight = highlight(originalSent, start, dep.value(), gov.value());
+                if(StringUtils.isBlank(highlight[0])) {
+                    continue;
+                }
                 list.add(String.format("%s%s:%s:%s:%s:%s", target, gov.value(), highlight[0], sent, type, highlight[1]));
             }
 //            else if(rel.toString().equals("amod") && "a".equals(posMap.get(dep.value())))
@@ -202,15 +208,19 @@ public class ChineseParser extends UDF {
 
     private String[] highlight(String sentence, int start, String word1, String word2) {
         String[] highlight = new String[2];
+        if(sentence.contains(word1) == false) {
+            word1 = JianFan.j2F(word1);
+            word2 = JianFan.j2F(word2);
+        }
         int x1 = sentence.indexOf(word1, start);
         int x2 = x1 + word1.length();
         int y1 = sentence.indexOf(word2, start);
         int y2 = y1 + word2.length();
-        if(x1 > y1) {
+        if(x1 > y1 && y1 > -1) {
             highlight[0] = String.format("%s_%s", y1, x2);
             highlight[1] = sentence.substring(y1, x2);
         }
-        else {
+        else if(x1 < y1 && x1 > -1) {
             highlight[0] = String.format("%s_%s", x1, y2);
             highlight[1] = sentence.substring(x1, y2);
         }
