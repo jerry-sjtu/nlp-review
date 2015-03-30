@@ -63,8 +63,9 @@ public class ChineseParser extends UDF {
         //String sentence = "环境不错，布置的也很漂亮，服务员还把我掉了的手机还给我。菜品对得起这个价格。";
         //String sentence = "圣维拉是杨浦区新开的一家一站式婚礼会所，环境是没的说的， ";
         //String sentence = "前几天去洗牙，因为我第一次洗牙，不太适应，医生态度邪恶，机械落后，还禁止我呜咽！之前说好180的，洗完之后变220了";
-        String sentence = "日本发型师比较贵，中国的就便宜点，我觉得他们剪得不错的，价格也还可以。尤其是我第一次从长发剪成短发，就很划算，剪得也好，同学同事都说成熟了。第二次替我剪了个太新潮的发型，我实在不能接受。";
+        //String sentence = "日本发型师比较贵，中国的就便宜点，我觉得他们剪得不错的，价格也还可以。尤其是我第一次从长发剪成短发，就很划算，剪得也好，同学同事都说成熟了。第二次替我剪了个太新潮的发型，我实在不能接受。";
 
+        String sentence = "我看到前台接待，和护士MM挺漂亮的、不知道技术跟服务怎样，我打算在那拔颗智慧牙。";
         ChineseParser parser = new ChineseParser();
         List<String> tList = parser.evaluate(sentence);
         System.out.println(tList);
@@ -247,6 +248,7 @@ public class ChineseParser extends UDF {
                 return StringUtils.EMPTY;
             }
         }
+        originText = originText.replaceAll("[a-zA-Z]+","");
         return originText;
     }
 
