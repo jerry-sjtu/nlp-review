@@ -65,15 +65,15 @@ public class ChineseParser extends UDF {
         //String sentence = "前几天去洗牙，因为我第一次洗牙，不太适应，医生态度邪恶，机械落后，还禁止我呜咽！之前说好180的，洗完之后变220了";
         String sentence = "日本发型师比较贵，中国的就便宜点，我觉得他们剪得不错的，价格也还可以。尤其是我第一次从长发剪成短发，就很划算，剪得也好，同学同事都说成熟了。第二次替我剪了个太新潮的发型，我实在不能接受。";
 
-//        ChineseParser parser = new ChineseParser();
-//        List<String> tList = parser.evaluate(sentence);
-//        System.out.println(tList);
-
-        String path1 = "/Users/qiangwang/Downloads/hair.csv";
-        String path2 = "/Users/qiangwang/Downloads/r.csv";
-        int lineNum = 0;
         ChineseParser parser = new ChineseParser();
-        parser.processFile(path1, path2, lineNum);
+        List<String> tList = parser.evaluate(sentence);
+        System.out.println(tList);
+
+//        String path1 = "/Users/qiangwang/Downloads/hair.csv";
+//        String path2 = "/Users/qiangwang/Downloads/r.csv";
+//        int lineNum = 0;
+//        ChineseParser parser = new ChineseParser();
+//        parser.processFile(path1, path2, lineNum);
     }
 
     public void processFile(String path1, String path2, int lineNum) throws IOException{
@@ -127,6 +127,7 @@ public class ChineseParser extends UDF {
             }
 
             List<Term> termList = ToAnalysis.parse(c);
+            //System.out.println(termList);
             if(hasOpinion(termList) == false) {
                 start += c.length();
                 continue;
@@ -138,7 +139,6 @@ public class ChineseParser extends UDF {
                 sb.append(t.getName()).append(" ");
                 posMap.put(t.getName(), t.getNatrue().natureStr);
             }
-            //System.out.println(posMap.toString());
             LinkedList<String> tmpList = extract(sentence, sb.toString(), start, posMap);
             tagList.addAll(tmpList);
 
@@ -174,17 +174,18 @@ public class ChineseParser extends UDF {
         GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
         List<TypedDependency> tdl = gs.typedDependenciesCCprocessed();
         for(TypedDependency d : tdl) {
+//            System.out.println(d);
             TreeGraphNode dep = d.dep();
             TreeGraphNode gov = d.gov();
             GrammaticalRelation rel = d.reln();
-            String highlight = highlight(originalSent, start, dep.value(), gov.value());
             if(rel.toString().equals("nsubj")
                   &&  ("a".equals(posMap.get(gov.value())) || "an".equals(posMap.get(gov.value())))) {
                 int sent = sentiment(dep.value(), gov.value(), 0, 0, 0);
                 int type = 1;
                 String cluster = nounClusterMap.get(dep.value());
                 String target = StringUtils.isBlank(cluster) ? dep.value() : cluster;
-                list.add(String.format("%s%s:%s:%s:%s", target, gov.value(), highlight, sent, type));
+                String[] highlight = highlight(originalSent, start, dep.value(), gov.value());
+                list.add(String.format("%s%s:%s:%s:%s:%s", target, gov.value(), highlight[0], sent, type, highlight[1]));
             }
 //            else if(rel.toString().equals("amod") && "a".equals(posMap.get(dep.value())))
 //            {
@@ -198,15 +199,21 @@ public class ChineseParser extends UDF {
         return list;
     }
 
-    private String highlight(String sentence, int start, String word1, String word2) {
+    private String[] highlight(String sentence, int start, String word1, String word2) {
+        String[] highlight = new String[2];
         int x1 = sentence.indexOf(word1, start);
         int x2 = x1 + word1.length();
         int y1 = sentence.indexOf(word2, start);
         int y2 = y1 + word2.length();
         if(x1 > y1) {
-            return String.format("%s_%s", y1, x2);
+            highlight[0] = String.format("%s_%s", y1, x2);
+            highlight[1] = sentence.substring(y1, x2);
         }
-        return String.format("%s_%s", x1, y2);
+        else {
+            highlight[0] = String.format("%s_%s", x1, y2);
+            highlight[1] = sentence.substring(x1, y2);
+        }
+        return highlight;
     }
 
 
